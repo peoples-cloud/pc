@@ -6,6 +6,13 @@ to create a technological solution so that people with computing power can share
 
 in the current iteration, this is focused on botmakers so that botmakers *with* servers can run swarms where botmakers *without* them can run their creations, while (hopefully!) reducing the overhead needed for the server people to share their resources.
 
+# who is it for
+it's intended for small communities with an already established trust, as technical trust is an incredibly complex subject  
+it's for [art bot / folk bot](https://youtu.be/87yiUjGnXdI) people that want to run their bots with the help of their friends  
+it's for private communities that want to experiment with weird stuff    
+basically, if you don't trust the people you will join the swarm with - **don't run this**
+
+
 # terminology
 * it's coming!
 * nodes
@@ -39,6 +46,8 @@ documentation forthcoming!
 * investigations into running everything on raspberry pis (i.e. cross-compiling binaries for the pi)
 * investigations into exposing ports so potentially webservices could run easily
 * investigations into supporting other languages, and potentially most languages!
+* investgations into technical audits that will allow for traceability of deployed programs (and thus some form of security for hosts)
+* exposing under-the-hood details via options for communities that want to tinker with it a bit more, and know how
 * lots and lots of bugfixes :bug:
 
 # requirements
