@@ -51,3 +51,6 @@ would love some! i'll think about and write some instructions on what kind of fo
 
 # issues/bugs/crashes
 let me know! either write a nice github issue about it, or ping me on [twitter](https://twitter.com/cblgh)
+
+# credit
+organization branding by [osavox](https://twitter.com/osavox)
