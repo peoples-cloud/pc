@@ -1,0 +1,6 @@
+ # intial peoples-cloud config
+server = "irc.freenode.net:7000"
+channel = "#peoplescloud"
+nick = "default"
+deploydirectory = "."
+rpcport = "42586"
