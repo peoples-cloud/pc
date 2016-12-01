@@ -18,7 +18,9 @@ it's for private communities that want to experiment with weird stuff
 basically, if you don't trust the people you will join the swarm with - **don't run this**
 
 ### how do i use it
-in one terminal window do:  
+first make sure you have fulfilled all the requirements (ipfs/docker/go)
+
+then, in a terminal window, do:  
 `go run pc.go daemon config.toml`
 
 in another terminal window you can now issue commands to the daemon:
@@ -44,15 +46,9 @@ _binaries are coming, and they can be built using `go build pc.go`_
 * swarms
 * programs
 
-### usage
-more examples coming! but the help shows a lot of usecases, just make sure you have fulfilled all the requirements and that you're running a pc daemon in another window
+
 `go run pc --help`
 `go run pc daemon config.toml`
-
-#### alpha version, work in progress etc
-probably has lots of bugs, but i'm hunting them with a mace and hammer (yeah both) so don't worry
-
-documentation forthcoming!
 
 ### what you can currently do
 * run self-contained nodejs, python2 and python3 programs on other people's computers
@@ -84,7 +80,10 @@ documentation forthcoming!
 would love some! i'll think about and write some instructions on what kind of format they should follow to make life easier for intergrating changes and new features.
 
 ## issues/bugs/crashes
-let me know! either write a nice github issue about it, or ping me on [twitter](https://twitter.com/cblgh)
+#### alpha version, work in progress etc
+there are probably lots of bugs lurking around, but i'm hunting them with a mace and hammer (yeah both) so don't worry
+
+but let me know if you find any! either write a nice github issue about it, or ping me on [twitter](https://twitter.com/cblgh)
 
 ### credit
 organization branding by [osavox](https://twitter.com/osavox)
