@@ -67,11 +67,14 @@ _binaries are coming, and they can be built using `go build pc.go`_
 
 ## coming up
 * binaries & github releases so you don't have to bother with using go run to run it all!
-* password protected channels
-* investigations into running everything on raspberry pis (i.e. cross-compiling binaries for the pi)
-* investigations into exposing ports so potentially webservices could run easily
-* investigations into supporting other languages, and potentially most languages!
-* investgations into technical audits that will allow for traceability of deployed programs (and thus some form of security for hosts)
+* support for password protected swarms
+* investigations into... 
+ * a dockerized setup so that you can just download an image and launch that instead
+ * running everything on raspberry pis (i.e. cross-compiling binaries for the pi)
+ * exposing ports so potentially webservices could run & communicate
+ * supporting other languages, and potentially most languages!
+ * granularity in configuration of your node, allowing you to restrict runtime, RAM usage and the like
+ * technical audits that will allow for traceability of deployed programs (and thus some form of security for hosts)
 * exposing under-the-hood details via options for communities that want to tinker with it a bit more, and know how
 * lots and lots of bugfixes :bug:
 
