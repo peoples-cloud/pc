@@ -24,7 +24,7 @@ then, in a terminal window, do:
 `go run pc.go daemon config.toml`
 
 in another terminal window you can now issue commands to the daemon:
-```
+```sh
 go run pc.go --help
 Usage:
   pc [command]
@@ -45,10 +45,6 @@ _binaries are coming, and they can be built using `go build pc.go`_
 * nodes
 * swarms
 * programs
-
-
-`go run pc --help`
-`go run pc daemon config.toml`
 
 ### what you can currently do
 * run self-contained nodejs, python2 and python3 programs on other people's computers
@@ -80,7 +76,7 @@ _binaries are coming, and they can be built using `go build pc.go`_
 
 
 ## contributions
-would love some! i'll think about and write some instructions on what kind of format they should follow to make life easier for intergrating changes and new features.
+would love some! i'll think about and write some instructions on what kind of format they should follow to make life easier for integrating changes and new features.
 
 ## issues/bugs/crashes
 #### alpha version, work in progress etc
