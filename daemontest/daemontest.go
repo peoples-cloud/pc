@@ -12,14 +12,16 @@ import (
 	"net/rpc"
 	"os"
 	"path/filepath"
-	"pc/cryptotest"
-	"pc/dockertest"
-	"pc/ipfstest"
-	"pc/rpctest"
-	"pc/tartest"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/peoples-cloud/pc/cryptotest"
+	"github.com/peoples-cloud/pc/dockertest"
+	"github.com/peoples-cloud/pc/ipfstest"
+	"github.com/peoples-cloud/pc/rpctest"
+	"github.com/peoples-cloud/pc/tartest"
+	"github.com/peoples-cloud/pc/util"
 
 	"github.com/BurntSushi/toml"
 	"github.com/thoj/go-ircevent"
@@ -64,15 +66,16 @@ func ReadConfig(configfile string) Config {
 		log.Fatal(err)
 	}
 	config.DeployDirectory, err = filepath.Abs(config.DeployDirectory)
+	_, err = os.Stat(config.DeployDirectory)
+	if err != nil {
+		log.Print("config: DeployDirectory doesn't exist; creating it")
+		_ = util.MakeDir(config.DeployDirectory, "")
+	}
 	// if default nick hasn't been changed, assign a random one
 	// TODO: handle nick collisions
 	if config.Nick == "default" {
 		config.Nick = "pc-" + cryptotest.GenerateRandomString(7)
 		log.Printf("default nick detected, chose %s as nick\n", config.Nick)
-	}
-	if err != nil {
-		log.Printf("read config: %v", err)
-		panic(err)
 	}
 	return config
 }
@@ -191,19 +194,18 @@ func stopContainer(program rpctest.Program) {
 
 func deployFromNetwork(program rpctest.Program) {
 	log.Printf("hash: %s\nkey: %s\n", program.Hash, program.Key)
-	// func DeployFromNetwork(program rpctest.Program) {
+	// create folder
+	deployPath := util.MakeDir(config.DeployDirectory, program.Hash)
 	// get from ipfs
 	log.Println("downloading program from ipfs")
-	dir := config.DeployDirectory + "/ipfs-program.tar.gz"
-	ipfstest.IPFSGet(program.Hash, dir)
+	tarball := deployPath + "/ipfs-program.tar.gz"
+	ipfstest.IPFSGet(program.Hash, tarball)
 	// decrypt
 	log.Println("decrypting tar")
-	cryptotest.Decrypt(dir, program.Key, dir)
+	cryptotest.Decrypt(tarball, program.Key, tarball)
 	// untar
-	deployPath := config.DeployDirectory
 	log.Println("unpacking tar")
-	tartest.UnpackTar(dir, deployPath)
-
+	tartest.UnpackTar(tarball, deployPath)
 	// build docker image
 	log.Println("building docker image")
 	dockertest.BuildImage(deployPath, program.Hash)

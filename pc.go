@@ -6,9 +6,10 @@ import (
 	"net/rpc"
 	"os"
 	"path/filepath"
-	"pc/daemontest"
-	"pc/rpctest"
 	"unicode"
+
+	"github.com/peoples-cloud/pc/daemontest"
+	"github.com/peoples-cloud/pc/rpctest"
 
 	"github.com/spf13/cobra"
 )
@@ -76,10 +77,9 @@ func main() {
 
 	// NOTE: remove cmdTest, maybe?
 	var cmdTest = &cobra.Command{
-		Use:   "test <hash> <key>",
-		Short: "Test deploys a program on this node",
-		Long: `Test deploys a program on this node
-            `,
+		Use:     "test <hash> <key>",
+		Short:   "Test-deploy a program on this node",
+		Long:    `Test-deploy a program on this node`,
 		Example: `pc test QmWLwhxjJuqff7cXniyZegg2NQnYFhVp5XcyyeLRjRqBtu vIhCg78Ef0hxGfvpEIeONTpDJGIL2UQWPh0fH8nTgzs`,
 
 		Run: func(cmd *cobra.Command, args []string) {
@@ -204,7 +204,7 @@ If no options are provided the generated swarm name is returned to stdout`,
 
 	var rootCmd = &cobra.Command{Use: "pc"}
 	rootCmd.AddCommand(cmdDeploy, cmdCreate, cmdJoin, cmdLeave, cmdList, cmdStop, cmdTest, cmdDaemon)
-	rootCmd.PersistentFlags().StringVarP(&rpcport, "rpcport", "r", "42586", "rpcport used to communicate with daemon, should match rpcport in the config")
+	rootCmd.PersistentFlags().StringVarP(&rpcport, "rpcport", "r", "42586", "specifies the port used to communicate with the pc daemon using rpc, should match rpcport in the config")
 	rootCmd.Execute()
 
 }
