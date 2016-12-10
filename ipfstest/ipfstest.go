@@ -2,6 +2,7 @@ package ipfstest
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
 	"strings"
 )
@@ -9,23 +10,18 @@ import (
 func IPFSAdd(filepath string) string {
 	out, err := exec.Command("ipfs", "add", filepath).Output()
 	if err != nil {
-		panic(err)
+		log.Fatalf("ipfs add: %v\n", err)
 	}
 	hash := strings.Split(string(out), " ")[1]
 	return hash
 }
 
 func IPFSGet(hash, dest string) {
-	cmd := exec.Command("ipfs", "get", hash)
+	fmt.Printf("hash: %s, dest: %s\n", hash, dest)
+	cmd := exec.Command("ipfs", "get", hash, "-o", dest)
 	err := cmd.Run()
 	if err != nil {
-		fmt.Printf("ipfs get: %v", err)
-		panic(err)
-	}
-	cmd = exec.Command("mv", hash, dest)
-	err = cmd.Run()
-	if err != nil {
-		panic(err)
+		log.Fatalf("ipfs get: %v\n", err)
 	}
 }
 

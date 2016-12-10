@@ -77,6 +77,8 @@ func ReadConfig(configfile string) Config {
 		config.Nick = "pc-" + cryptotest.GenerateRandomString(7)
 		log.Printf("default nick detected, chose %s as nick\n", config.Nick)
 	}
+
+	connectedSwarms[config.Channel] = ""
 	return config
 }
 
@@ -130,9 +132,13 @@ func createBookkeeping(path string) error {
 	return err
 }
 
-// WriteFile(filename string, data []byte, perm os.FileMode) error
-
 func (l *Listener) Deploy(info *rpctest.RPCInfo, reply *rpctest.Message) error {
+	_, ok := connectedSwarms[info.Swarm]
+	if !ok {
+		reply.Msg = fmt.Sprintf("Not connected to any swarm named %s.", info.Swarm)
+		return nil
+	}
+
 	isDeploying = true
 	log.Printf("RPC received: %s: %s %s\n", info.Swarm, info.Path, info.Language)
 	log.Println("creating dockerfile")
@@ -143,7 +149,7 @@ func (l *Listener) Deploy(info *rpctest.RPCInfo, reply *rpctest.Message) error {
 	log.Println("creating tarball")
 	dir, err := os.Getwd()
 	if err != nil {
-		panic(err)
+		log.Fatalf("deploy: %v\n", err)
 	}
 	tarball := fmt.Sprintf("%s/%s", dir, "pc-docker.tar.gz")
 	tartest.PackTar(info.Path, tarball)
@@ -157,19 +163,18 @@ func (l *Listener) Deploy(info *rpctest.RPCInfo, reply *rpctest.Message) error {
 	hash := ipfstest.IPFSAdd(tarball)
 	log.Printf("hash: %s\n", hash)
 	// deploy over irc with hash & key
-	// reply to user with hash & key
 	channel := fmt.Sprintf("#%s", info.Swarm)
 	conn.Privmsg(channel, fmt.Sprintf("[pc-deploy] %s %s", hash, key))
+	// reply to user with hash & key
+	reply.Msg = fmt.Sprintf("hash: %s\tkey: %s", hash, key)
 
 	go func() {
 		time.Sleep(deployTimeout)
 		log.Printf("highest roll was %d\n", highestRoll)
 		if highestRoll > 0 {
 			conn.Privmsg(channel, fmt.Sprintf("[pc-host] %d", highestRoll))
-			reply.Msg = "deploy was successful"
 		} else {
 			log.Printf("could not deploy %s", hash)
-			reply.Msg = "deploy failed"
 		}
 		isDeploying = false
 		highestRoll = -1 // reset roll counter
@@ -190,16 +195,17 @@ func (l *Listener) Create(info *rpctest.RPCInfo, reply *rpctest.Message) error {
 
 func stopContainer(program rpctest.Program) {
 	dockertest.StopContainer(program.Hash)
+	conn.Privmsg(fmt.Sprintf("#%s", program.Swarm), fmt.Sprintf("[pc-stopped] %s", program.Hash))
 }
 
 func deployFromNetwork(program rpctest.Program) {
 	log.Printf("hash: %s\nkey: %s\n", program.Hash, program.Key)
 	// create folder
-	deployPath := util.MakeDir(config.DeployDirectory, program.Hash)
+	deployPath := util.MakeDir(config.DeployDirectory, program.Hash+"-deploy")
 	// get from ipfs
 	log.Println("downloading program from ipfs")
-	tarball := deployPath + "/ipfs-program.tar.gz"
-	ipfstest.IPFSGet(program.Hash, tarball)
+	ipfstest.IPFSGet(program.Hash, deployPath)
+	tarball := fmt.Sprintf("%s/%s", deployPath, program.Hash)
 	// decrypt
 	log.Println("decrypting tar")
 	cryptotest.Decrypt(tarball, program.Key, tarball)
@@ -258,6 +264,7 @@ func rollForDeploy() {
 	myRoll = nBig.Int64()
 	conn.Privmsg(fmt.Sprintf("#%s", deployRequest.Swarm), fmt.Sprintf("[pc-roll] %d", myRoll))
 }
+
 func processChat(line, channel string) {
 	msg := strings.Split(line, " ")
 	switch msg[0] {
@@ -325,7 +332,6 @@ func RunDaemon(configpath string) {
 	conn.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	conn.AddCallback("001", func(event *irc.Event) {
 		conn.Join(config.Channel)
-		log.Printf("Joined %s", config.Channel)
 		joinConnectedSwarms()
 	})
 	conn.AddCallback("366", func(event *irc.Event) {})

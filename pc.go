@@ -76,19 +76,19 @@ func main() {
 	}
 
 	// NOTE: remove cmdTest, maybe?
-	var cmdTest = &cobra.Command{
-		Use:     "test <hash> <key>",
-		Short:   "Test-deploy a program on this node",
-		Long:    `Test-deploy a program on this node`,
-		Example: `pc test QmWLwhxjJuqff7cXniyZegg2NQnYFhVp5XcyyeLRjRqBtu vIhCg78Ef0hxGfvpEIeONTpDJGIL2UQWPh0fH8nTgzs`,
-
-		Run: func(cmd *cobra.Command, args []string) {
-			checkArgLength(2, args, cmd)
-			fmt.Printf("doing testdeploy with\nhash: %s\nkey:%s", args[0], args[1])
-			info := rpctest.RPCInfo{Hash: args[0], Key: args[1]}
-			_ = sendRPC(cmd.Name(), info)
-		},
-	}
+	// var cmdTest = &cobra.Command{
+	// 	Use:     "test <hash> <key>",
+	// 	Short:   "Test-deploy a program on this node",
+	// 	Long:    `Test-deploy a program on this node`,
+	// 	Example: `pc test QmWLwhxjJuqff7cXniyZegg2NQnYFhVp5XcyyeLRjRqBtu vIhCg78Ef0hxGfvpEIeONTpDJGIL2UQWPh0fH8nTgzs`,
+	//
+	// 	Run: func(cmd *cobra.Command, args []string) {
+	// 		checkArgLength(2, args, cmd)
+	// 		fmt.Printf("doing testdeploy with\nhash: %s\nkey:%s", args[0], args[1])
+	// 		info := rpctest.RPCInfo{Hash: args[0], Key: args[1]}
+	// 		_ = sendRPC(cmd.Name(), info)
+	// 	},
+	// }
 	/* cobra cli command stuff */
 	var cmdDeploy = &cobra.Command{
 		Use:   "deploy <swarm> <path> <language>",
@@ -111,10 +111,10 @@ currently available language options are:
 			if err != nil {
 				panic(err)
 			}
-			fmt.Printf("%s chosen\ndeploying %s to #%s\n", lang, path, swarm)
+			fmt.Printf("deploying %s to %s...\n", path, swarm)
 			info := rpctest.RPCInfo{Swarm: swarm, Path: path, Language: lang}
-			fmt.Println(cmd.Name())
-			_ = sendRPC(cmd.Name(), info)
+			reply := sendRPC(cmd.Name(), info)
+			fmt.Printf("deploy:\n%s\n", reply.Msg)
 		},
 	}
 
@@ -203,16 +203,16 @@ If no options are provided the generated swarm name is returned to stdout`,
 	// cmdJoin.Flags().BoolVar(&noHost, "no-host", false, "disable hosting for this node")
 
 	var rootCmd = &cobra.Command{Use: "pc"}
-	rootCmd.AddCommand(cmdDeploy, cmdCreate, cmdJoin, cmdLeave, cmdList, cmdStop, cmdTest, cmdDaemon)
+	rootCmd.AddCommand(cmdDeploy, cmdCreate, cmdJoin, cmdLeave, cmdList, cmdStop /* cmdTest,*/, cmdDaemon)
 	rootCmd.PersistentFlags().StringVarP(&rpcport, "rpcport", "r", "42586", "specifies the port used to communicate with the pc daemon using rpc, should match rpcport in the config")
 	rootCmd.Execute()
 
 }
 
 func dialDaemon() *rpc.Client {
-	client, err := rpc.Dial("tcp", fmt.Sprintf("localhost:"+rpcport))
+	client, err := rpc.Dial("tcp", fmt.Sprintf("localhost:%s", rpcport))
 	if err != nil {
-		fmt.Println("run pc daemon in another window before writing this")
+		fmt.Println("run pc daemon in another window before trying to deploy")
 		log.Fatal(err)
 	}
 	return client
