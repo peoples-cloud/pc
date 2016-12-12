@@ -114,7 +114,6 @@ func readBookkeeping() {
 	data, err := ioutil.ReadFile(pcfile)
 	if err != nil {
 		log.Printf("couldn't find %s; creating it\n", pcfile)
-		connectedSwarms = make(map[string]string)
 		err = createBookkeeping(pcfile)
 		if err != nil {
 			panic(err)
