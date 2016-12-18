@@ -264,11 +264,19 @@ func rollForDeploy() {
 	conn.Privmsg(fmt.Sprintf("#%s", deployRequest.Swarm), fmt.Sprintf("[pc-roll] %d", myRoll))
 }
 
+func saveDeployLocally(hash string) {
+	// TODO: check against user restrictions & limitations from config
+	log.Printf("saving %s locally\n", hash)
+	ipfstest.IPFSPin(hash)
+}
+
 func processChat(line, channel string) {
 	msg := strings.Split(line, " ")
 	switch msg[0] {
 	case "[pc-deploy]":
 		if len(msg[1]) == IPFS_LENGTH && len(msg[2]) == KEY_LENGTH {
+			// pin the ipfs hash
+			saveDeployLocally(msg[1])
 			deployRequest = rpctest.Program{Hash: msg[1], Key: msg[2], Swarm: channel[1:]}
 			rollForDeploy()
 			// interpret as a pc deploy

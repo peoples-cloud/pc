@@ -16,6 +16,15 @@ func IPFSAdd(filepath string) string {
 	return hash
 }
 
+func IPFSPin(hash string) {
+	cmd := exec.Command("ipfs", "pin", "add", hash)
+	err := cmd.Run()
+	if err != nil {
+		log.Fatalf("ipfs pin add: %v\n", err)
+	}
+	log.Println("ipfs: pinned " + hash)
+}
+
 func IPFSGet(hash, dest string) {
 	fmt.Printf("hash: %s, dest: %s\n", hash, dest)
 	cmd := exec.Command("ipfs", "get", hash, "-o", dest)
