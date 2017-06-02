@@ -17,8 +17,10 @@ import (
 	"time"
 
 	"github.com/peoples-cloud/pc/crypto"
+	"github.com/peoples-cloud/pc/docker"
 	"github.com/peoples-cloud/pc/ipfs"
 	"github.com/peoples-cloud/pc/rpc"
+	"github.com/peoples-cloud/pc/tar"
 	"github.com/peoples-cloud/pc/util"
 
 	"github.com/BurntSushi/toml"
@@ -148,7 +150,7 @@ func (l *Listener) Deploy(info *rpc.Info, reply *rpc.Message) error {
 		log.Fatalf("deploy: %v\n", err)
 	}
 	tarball := fmt.Sprintf("%s/%s", dir, "pc-docker.tar.gz")
-	tar.PackTar(info.Path, tarball)
+	tar.Pack(info.Path, tarball)
 	// encrypt tar
 	log.Println("encrypting tarball")
 	key, tarball := crypto.Encrypt(tarball)
@@ -207,7 +209,7 @@ func deployFromNetwork(program rpc.Program) {
 	crypto.Decrypt(tarball, program.Key, tarball)
 	// untar
 	log.Println("unpacking tar")
-	tar.UnpackTar(tarball, deployPath)
+	tar.Unpack(tarball, deployPath)
 	// build docker image
 	log.Println("building docker image")
 	docker.BuildImage(deployPath, program.Hash)
