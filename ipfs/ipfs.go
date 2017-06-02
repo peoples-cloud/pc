@@ -1,4 +1,4 @@
-package ipfstest
+package ipfs
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func IPFSAdd(filepath string) string {
+func Add(filepath string) string {
 	out, err := exec.Command("ipfs", "add", filepath).Output()
 	if err != nil {
 		log.Fatalf("ipfs add: %v\n", err)
@@ -16,7 +16,7 @@ func IPFSAdd(filepath string) string {
 	return hash
 }
 
-func IPFSPin(hash string) {
+func Pin(hash string) {
 	cmd := exec.Command("ipfs", "pin", "add", hash)
 	err := cmd.Run()
 	if err != nil {
@@ -25,7 +25,7 @@ func IPFSPin(hash string) {
 	log.Println("ipfs: pinned " + hash)
 }
 
-func IPFSGet(hash, dest string) {
+func Get(hash, dest string) {
 	fmt.Printf("hash: %s, dest: %s\n", hash, dest)
 	cmd := exec.Command("ipfs", "get", hash, "-o", dest)
 	err := cmd.Run()

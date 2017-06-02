@@ -1,4 +1,4 @@
-package tartest
+package tar
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package cryptotest
+package crypto
 
 import (
 	"bytes"

@@ -1,4 +1,4 @@
-package rpctest
+package rpc
 
 type Message struct {
 	Msg string
@@ -15,7 +15,7 @@ type Program struct {
 	Key   string
 }
 
-type RPCInfo struct {
+type Info struct {
 	Swarm    string
 	Password string
 	Path     string

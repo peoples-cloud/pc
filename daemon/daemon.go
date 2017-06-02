@@ -1,4 +1,4 @@
-package daemontest
+package daemon
 
 import (
 	"crypto/rand"
@@ -16,15 +16,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/peoples-cloud/pc/cryptotest"
-	"github.com/peoples-cloud/pc/dockertest"
-	"github.com/peoples-cloud/pc/ipfstest"
-	"github.com/peoples-cloud/pc/rpctest"
-	"github.com/peoples-cloud/pc/tartest"
+	"github.com/peoples-cloud/pc/crypto"
+	"github.com/peoples-cloud/pc/ipfs"
+	"github.com/peoples-cloud/pc/rpc"
 	"github.com/peoples-cloud/pc/util"
 
 	"github.com/BurntSushi/toml"
-	"github.com/thoj/go-ircevent"
 )
 
 // for rpc between client & server https://golang.org/pkg/net/rpc/
@@ -50,7 +47,7 @@ var isDeploying = false
 var myRoll int64 = -1
 var highestRoll int64 = -1
 var deployTimeout = time.Second * 5
-var deployRequest rpctest.Program
+var deployRequest rpc.Program
 
 // TODO: keep track of deployed programs in bookkeeping
 var connectedSwarms = make(map[string]string)
@@ -74,7 +71,7 @@ func ReadConfig(configfile string) Config {
 	// if default nick hasn't been changed, assign a random one
 	// TODO: handle nick collisions
 	if config.Nick == "default" {
-		config.Nick = "pc-" + cryptotest.GenerateRandomString(7)
+		config.Nick = "pc-" + crypto.GenerateRandomString(7)
 		log.Printf("default nick detected, chose %s as nick\n", config.Nick)
 	}
 
@@ -89,7 +86,7 @@ func joinConnectedSwarms() {
 	}
 }
 
-func updateBookkeeping(info *rpctest.RPCInfo) {
+func updateBookkeeping(info *rpc.Info) {
 	log.Println("updating bookkeeping")
 	password := info.Password
 	if len(info.Password) == 0 {
@@ -131,7 +128,7 @@ func createBookkeeping(path string) error {
 	return err
 }
 
-func (l *Listener) Deploy(info *rpctest.RPCInfo, reply *rpctest.Message) error {
+func (l *Listener) Deploy(info *rpc.Info, reply *rpc.Message) error {
 	_, ok := connectedSwarms[info.Swarm]
 	if !ok {
 		reply.Msg = fmt.Sprintf("Not connected to any swarm named %s.", info.Swarm)
@@ -142,7 +139,7 @@ func (l *Listener) Deploy(info *rpctest.RPCInfo, reply *rpctest.Message) error {
 	log.Printf("RPC received: %s: %s %s\n", info.Swarm, info.Path, info.Language)
 	log.Println("creating dockerfile")
 	// create dockerfile
-	dockertest.CreateDockerfile(info.Language, info.Path)
+	docker.CreateDockerfile(info.Language, info.Path)
 	log.Printf("wrote dockerfile for %s\n", info.Language)
 	// tar destination
 	log.Println("creating tarball")
@@ -151,15 +148,15 @@ func (l *Listener) Deploy(info *rpctest.RPCInfo, reply *rpctest.Message) error {
 		log.Fatalf("deploy: %v\n", err)
 	}
 	tarball := fmt.Sprintf("%s/%s", dir, "pc-docker.tar.gz")
-	tartest.PackTar(info.Path, tarball)
+	tar.PackTar(info.Path, tarball)
 	// encrypt tar
 	log.Println("encrypting tarball")
-	key, tarball := cryptotest.Encrypt(tarball)
+	key, tarball := crypto.Encrypt(tarball)
 	log.Println("dest", tarball)
 	log.Printf("key: %s\n", key)
 	// upload to ipfs
 	log.Println("uploading to ipfs")
-	hash := ipfstest.IPFSAdd(tarball)
+	hash := ipfs.Add(tarball)
 	log.Printf("hash: %s\n", hash)
 	// deploy over irc with hash & key
 	channel := fmt.Sprintf("#%s", info.Swarm)
@@ -181,9 +178,9 @@ func (l *Listener) Deploy(info *rpctest.RPCInfo, reply *rpctest.Message) error {
 	return nil
 }
 
-func (l *Listener) Create(info *rpctest.RPCInfo, reply *rpctest.Message) error {
+func (l *Listener) Create(info *rpc.Info, reply *rpc.Message) error {
 	if len(info.Swarm) == 0 {
-		info.Swarm = cryptotest.GenerateRandomString(8)
+		info.Swarm = crypto.GenerateRandomString(8)
 	}
 	log.Printf("RPC received: join #%s pass: %s\n", info.Swarm, info.Password)
 	conn.Join(fmt.Sprintf("#%s %s", info.Swarm, info.Password))
@@ -192,32 +189,32 @@ func (l *Listener) Create(info *rpctest.RPCInfo, reply *rpctest.Message) error {
 	return nil
 }
 
-func stopContainer(program rpctest.Program) {
-	dockertest.StopContainer(program.Hash)
+func stopContainer(program rpc.Program) {
+	docker.StopContainer(program.Hash)
 	conn.Privmsg(fmt.Sprintf("#%s", program.Swarm), fmt.Sprintf("[pc-stopped] %s", program.Hash))
 }
 
-func deployFromNetwork(program rpctest.Program) {
+func deployFromNetwork(program rpc.Program) {
 	log.Printf("hash: %s\nkey: %s\n", program.Hash, program.Key)
 	// create folder
 	deployPath := util.MakeDir(config.DeployDirectory, program.Hash+"-deploy")
 	// get from ipfs
 	log.Println("downloading program from ipfs")
-	ipfstest.IPFSGet(program.Hash, deployPath)
+	ipfs.Get(program.Hash, deployPath)
 	tarball := fmt.Sprintf("%s/%s", deployPath, program.Hash)
 	// decrypt
 	log.Println("decrypting tar")
-	cryptotest.Decrypt(tarball, program.Key, tarball)
+	crypto.Decrypt(tarball, program.Key, tarball)
 	// untar
 	log.Println("unpacking tar")
-	tartest.UnpackTar(tarball, deployPath)
+	tar.UnpackTar(tarball, deployPath)
 	// build docker image
 	log.Println("building docker image")
-	dockertest.BuildImage(deployPath, program.Hash)
+	docker.BuildImage(deployPath, program.Hash)
 	log.Printf("built %s-image\n", program.Hash)
 	// start container
 	log.Println("starting container")
-	err := dockertest.RunContainer(program.Hash)
+	err := docker.RunContainer(program.Hash)
 	if err != nil {
 		return
 	}
@@ -225,32 +222,32 @@ func deployFromNetwork(program rpctest.Program) {
 	conn.Privmsg(fmt.Sprintf("#%s", program.Swarm), fmt.Sprintf("[pc-ack] %s", program.Hash))
 }
 
-func (l *Listener) Test(info *rpctest.RPCInfo, reply *rpctest.Message) error {
+func (l *Listener) Test(info *rpc.Info, reply *rpc.Message) error {
 	// deployFromNetwork(rpctest.Program{Hash: info.Hash, Key: info.Key})
 	return nil
 }
 
-func (l *Listener) Join(info *rpctest.RPCInfo, reply *rpctest.Message) error {
+func (l *Listener) Join(info *rpc.Info, reply *rpc.Message) error {
 	log.Printf("RPC received: join #%s pass: %s\n", info.Swarm, info.Password)
 	conn.Join(fmt.Sprintf("#%s %s", info.Swarm, info.Password))
 	updateBookkeeping(info)
 	return nil
 }
 
-func (l *Listener) Leave(info *rpctest.RPCInfo, reply *rpctest.Message) error {
+func (l *Listener) Leave(info *rpc.Info, reply *rpc.Message) error {
 	log.Printf("RPC received: part #%s\n", info.Swarm)
 	conn.Part(fmt.Sprintf("#%s", info.Swarm))
 	updateBookkeeping(info)
 	return nil
 }
 
-func (l *Listener) Stop(info *rpctest.RPCInfo, reply *rpctest.Message) error {
+func (l *Listener) Stop(info *rpc.Info, reply *rpc.Message) error {
 	log.Printf("RPC received: stop %s\n", info.Hash)
 	conn.Privmsg(fmt.Sprintf("#%s", info.Swarm), fmt.Sprintf("[pc-stop] %s", info.Hash))
 	return nil
 }
 
-func (l *Listener) List(line string, reply *rpctest.Message) error {
+func (l *Listener) List(line string, reply *rpc.Message) error {
 	log.Printf("RPC received: %s\n", string(line))
 	return nil
 }
@@ -267,7 +264,7 @@ func rollForDeploy() {
 func saveDeployLocally(hash string) {
 	// TODO: check against user restrictions & limitations from config
 	log.Printf("saving %s locally\n", hash)
-	ipfstest.IPFSPin(hash)
+	ipfs.Pin(hash)
 }
 
 func processChat(line, channel string) {
@@ -277,7 +274,7 @@ func processChat(line, channel string) {
 		if len(msg[1]) == IPFS_LENGTH && len(msg[2]) == KEY_LENGTH {
 			// pin the ipfs hash
 			saveDeployLocally(msg[1])
-			deployRequest = rpctest.Program{Hash: msg[1], Key: msg[2], Swarm: channel[1:]}
+			deployRequest = rpc.Program{Hash: msg[1], Key: msg[2], Swarm: channel[1:]}
 			rollForDeploy()
 			// interpret as a pc deploy
 			// log.Println("this was a correctly formatted pc deploy")
@@ -286,7 +283,7 @@ func processChat(line, channel string) {
 	case "[pc-stop]":
 		if len(msg[1]) == IPFS_LENGTH {
 			log.Println("attempting to stop container")
-			stopContainer(rpctest.Program{Hash: msg[1], Swarm: channel[1:]})
+			stopContainer(rpc.Program{Hash: msg[1], Swarm: channel[1:]})
 		}
 	case "[pc-roll]":
 		if roll, err := strconv.ParseInt(msg[1], 10, 64); err == nil && isDeploying {
@@ -307,8 +304,8 @@ func processChat(line, channel string) {
 				log.Printf("i won the roll! deploying: %s\n", deployRequest.Hash)
 				go deployFromNetwork(deployRequest)
 			}
-			myRoll = -1                       // reset roll
-			deployRequest = rpctest.Program{} // empty deploy request
+			myRoll = -1                   // reset roll
+			deployRequest = rpc.Program{} // empty deploy request
 		}
 	}
 }

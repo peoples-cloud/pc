@@ -1,4 +1,4 @@
-package dockertest
+package docker
 
 import (
 	"bytes"
