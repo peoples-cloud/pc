@@ -22,6 +22,7 @@ import (
 	"github.com/peoples-cloud/pc/rpc"
 	"github.com/peoples-cloud/pc/tar"
 	"github.com/peoples-cloud/pc/util"
+	irc "github.com/thoj/go-ircevent"
 
 	"github.com/BurntSushi/toml"
 )
@@ -49,7 +50,7 @@ var isDeploying = false
 var myRoll int64 = -1
 var highestRoll int64 = -1
 var deployTimeout = time.Second * 5
-var deployRequest rpc.Program
+var deployRequest rpcmsg.Program
 
 // TODO: keep track of deployed programs in bookkeeping
 var connectedSwarms = make(map[string]string)
@@ -88,7 +89,7 @@ func joinConnectedSwarms() {
 	}
 }
 
-func updateBookkeeping(info *rpc.Info) {
+func updateBookkeeping(info *rpcmsg.Info) {
 	log.Println("updating bookkeeping")
 	password := info.Password
 	if len(info.Password) == 0 {
@@ -130,7 +131,7 @@ func createBookkeeping(path string) error {
 	return err
 }
 
-func (l *Listener) Deploy(info *rpc.Info, reply *rpc.Message) error {
+func (l *Listener) Deploy(info *rpcmsg.Info, reply *rpcmsg.Message) error {
 	_, ok := connectedSwarms[info.Swarm]
 	if !ok {
 		reply.Msg = fmt.Sprintf("Not connected to any swarm named %s.", info.Swarm)
@@ -180,7 +181,7 @@ func (l *Listener) Deploy(info *rpc.Info, reply *rpc.Message) error {
 	return nil
 }
 
-func (l *Listener) Create(info *rpc.Info, reply *rpc.Message) error {
+func (l *Listener) Create(info *rpcmsg.Info, reply *rpcmsg.Message) error {
 	if len(info.Swarm) == 0 {
 		info.Swarm = crypto.GenerateRandomString(8)
 	}
@@ -191,12 +192,12 @@ func (l *Listener) Create(info *rpc.Info, reply *rpc.Message) error {
 	return nil
 }
 
-func stopContainer(program rpc.Program) {
+func stopContainer(program rpcmsg.Program) {
 	docker.StopContainer(program.Hash)
 	conn.Privmsg(fmt.Sprintf("#%s", program.Swarm), fmt.Sprintf("[pc-stopped] %s", program.Hash))
 }
 
-func deployFromNetwork(program rpc.Program) {
+func deployFromNetwork(program rpcmsg.Program) {
 	log.Printf("hash: %s\nkey: %s\n", program.Hash, program.Key)
 	// create folder
 	deployPath := util.MakeDir(config.DeployDirectory, program.Hash+"-deploy")
@@ -224,32 +225,32 @@ func deployFromNetwork(program rpc.Program) {
 	conn.Privmsg(fmt.Sprintf("#%s", program.Swarm), fmt.Sprintf("[pc-ack] %s", program.Hash))
 }
 
-func (l *Listener) Test(info *rpc.Info, reply *rpc.Message) error {
+func (l *Listener) Test(info *rpcmsg.Info, reply *rpcmsg.Message) error {
 	// deployFromNetwork(rpctest.Program{Hash: info.Hash, Key: info.Key})
 	return nil
 }
 
-func (l *Listener) Join(info *rpc.Info, reply *rpc.Message) error {
+func (l *Listener) Join(info *rpcmsg.Info, reply *rpcmsg.Message) error {
 	log.Printf("RPC received: join #%s pass: %s\n", info.Swarm, info.Password)
 	conn.Join(fmt.Sprintf("#%s %s", info.Swarm, info.Password))
 	updateBookkeeping(info)
 	return nil
 }
 
-func (l *Listener) Leave(info *rpc.Info, reply *rpc.Message) error {
+func (l *Listener) Leave(info *rpcmsg.Info, reply *rpcmsg.Message) error {
 	log.Printf("RPC received: part #%s\n", info.Swarm)
 	conn.Part(fmt.Sprintf("#%s", info.Swarm))
 	updateBookkeeping(info)
 	return nil
 }
 
-func (l *Listener) Stop(info *rpc.Info, reply *rpc.Message) error {
+func (l *Listener) Stop(info *rpcmsg.Info, reply *rpcmsg.Message) error {
 	log.Printf("RPC received: stop %s\n", info.Hash)
 	conn.Privmsg(fmt.Sprintf("#%s", info.Swarm), fmt.Sprintf("[pc-stop] %s", info.Hash))
 	return nil
 }
 
-func (l *Listener) List(line string, reply *rpc.Message) error {
+func (l *Listener) List(line string, reply *rpcmsg.Message) error {
 	log.Printf("RPC received: %s\n", string(line))
 	return nil
 }
@@ -276,7 +277,7 @@ func processChat(line, channel string) {
 		if len(msg[1]) == IPFS_LENGTH && len(msg[2]) == KEY_LENGTH {
 			// pin the ipfs hash
 			saveDeployLocally(msg[1])
-			deployRequest = rpc.Program{Hash: msg[1], Key: msg[2], Swarm: channel[1:]}
+			deployRequest = rpcmsg.Program{Hash: msg[1], Key: msg[2], Swarm: channel[1:]}
 			rollForDeploy()
 			// interpret as a pc deploy
 			// log.Println("this was a correctly formatted pc deploy")
@@ -285,7 +286,7 @@ func processChat(line, channel string) {
 	case "[pc-stop]":
 		if len(msg[1]) == IPFS_LENGTH {
 			log.Println("attempting to stop container")
-			stopContainer(rpc.Program{Hash: msg[1], Swarm: channel[1:]})
+			stopContainer(rpcmsg.Program{Hash: msg[1], Swarm: channel[1:]})
 		}
 	case "[pc-roll]":
 		if roll, err := strconv.ParseInt(msg[1], 10, 64); err == nil && isDeploying {
@@ -306,8 +307,8 @@ func processChat(line, channel string) {
 				log.Printf("i won the roll! deploying: %s\n", deployRequest.Hash)
 				go deployFromNetwork(deployRequest)
 			}
-			myRoll = -1                   // reset roll
-			deployRequest = rpc.Program{} // empty deploy request
+			myRoll = -1                      // reset roll
+			deployRequest = rpcmsg.Program{} // empty deploy request
 		}
 	}
 }

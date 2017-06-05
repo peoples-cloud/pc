@@ -1,4 +1,4 @@
-package rpc
+package rpcmsg
 
 type Message struct {
 	Msg string

@@ -20,9 +20,9 @@ var requirePass bool
 var noPass = false
 var noHost = false
 
-func sendRPC(command string, info rpc.Info) rpc.Message {
+func sendRPC(command string, info rpcmsg.Info) rpcmsg.Message {
 	client := dialDaemon()
-	var reply rpc.Message
+	var reply rpcmsg.Message
 	command = Capitalize(command)
 	err := client.Call(fmt.Sprintf("Listener.%s", command), info, &reply)
 	if err != nil {
@@ -112,7 +112,7 @@ currently available language options are:
 				panic(err)
 			}
 			fmt.Printf("deploying %s to %s...\n", path, swarm)
-			info := rpc.Info{Swarm: swarm, Path: path, Language: lang}
+			info := rpcmsg.Info{Swarm: swarm, Path: path, Language: lang}
 			reply := sendRPC(cmd.Name(), info)
 			fmt.Printf("deploy:\n%s\n", reply.Msg)
 		},
@@ -127,7 +127,7 @@ currently available language options are:
 			checkArgLength(2, args, cmd)
 			swarm := args[0]
 			hash := args[1]
-			info := rpc.Info{Swarm: swarm, Hash: hash}
+			info := rpcmsg.Info{Swarm: swarm, Hash: hash}
 			_ = sendRPC(cmd.Name(), info)
 			fmt.Printf("%s: stopped %s\n", swarm, hash)
 		},
@@ -147,7 +147,7 @@ If no options are provided the generated swarm name is returned to stdout`,
 				fmt.Println("error: create takes swarm name as a flag:\npc create -n <swarm name>")
 				os.Exit(0)
 			}
-			info := rpc.Info{Swarm: swarmName, Password: swarmPassword}
+			info := rpcmsg.Info{Swarm: swarmName, Password: swarmPassword}
 			reply := sendRPC(cmd.Name(), info)
 			fmt.Printf("created %s\n", reply.Msg)
 		},
@@ -161,7 +161,7 @@ If no options are provided the generated swarm name is returned to stdout`,
 		Run: func(cmd *cobra.Command, args []string) {
 			checkArgLength(1, args, cmd)
 			swarmName = args[0]
-			info := rpc.Info{Swarm: swarmName, Password: swarmPassword}
+			info := rpcmsg.Info{Swarm: swarmName, Password: swarmPassword}
 			_ = sendRPC(cmd.Name(), info)
 			fmt.Printf("joined %s\n", swarmName)
 		},
@@ -175,7 +175,7 @@ If no options are provided the generated swarm name is returned to stdout`,
 		Run: func(cmd *cobra.Command, args []string) {
 			checkArgLength(1, args, cmd)
 			swarmName = args[0]
-			info := rpc.Info{Swarm: swarmName}
+			info := rpcmsg.Info{Swarm: swarmName}
 			_ = sendRPC(cmd.Name(), info)
 			fmt.Printf("left %s\n", swarmName)
 		},
