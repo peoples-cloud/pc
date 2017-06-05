@@ -1,14 +1,10 @@
 package tar
 
-import (
-	"fmt"
-	"os/exec"
-)
+import "os/exec"
 
 // TODO: find solution that doesn't depend on os environemnt i.e. entirely golang based solution for tar unpack & pack
 func Unpack(tarball, dest string) {
 	cmd := exec.Command("tar", "xf", tarball, "-C", dest, ".")
-	fmt.Printf("unpacking %s into %s\n", tarball, dest)
 	err := cmd.Run()
 	if err != nil {
 		panic(err)

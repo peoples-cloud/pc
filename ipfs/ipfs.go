@@ -1,7 +1,6 @@
 package ipfs
 
 import (
-	"fmt"
 	"log"
 	"os/exec"
 	"strings"
@@ -26,7 +25,7 @@ func Pin(hash string) {
 }
 
 func Get(hash, dest string) {
-	fmt.Printf("hash: %s, dest: %s\n", hash, dest)
+	// fmt.Printf("hash: %s, dest: %s\n", hash, dest)
 	cmd := exec.Command("ipfs", "get", hash, "-o", dest)
 	err := cmd.Run()
 	if err != nil {
