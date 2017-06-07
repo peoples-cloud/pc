@@ -7,7 +7,7 @@ import (
 
 // TODO: find solution that doesn't depend on os environemnt i.e. entirely golang based solution for tar unpack & pack
 func Unpack(tarball, dest string) {
-	cmd := exec.Command("tar", "xf", tarball, "-C", dest, ".")
+	cmd := exec.Command("tar", "xf", tarball, "-C", dest)
 	err := cmd.Run()
 	if err != nil {
 		panic(err)
@@ -34,5 +34,5 @@ func Pack(src, tarball string) {
 }
 
 // func main() {
-// 	Pack(os.Args[2], os.Args[1])
+// 	Unpack(os.Args[1], os.Args[2])
 // }
