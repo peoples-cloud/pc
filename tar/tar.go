@@ -1,6 +1,9 @@
 package tar
 
-import "os/exec"
+import (
+	"os"
+	"os/exec"
+)
 
 // TODO: find solution that doesn't depend on os environemnt i.e. entirely golang based solution for tar unpack & pack
 func Unpack(tarball, dest string) {
@@ -11,22 +14,25 @@ func Unpack(tarball, dest string) {
 	}
 }
 
-func PackFile(file, tarball string) {
-	cmd := exec.Command("tar", "czf", tarball, file)
-	err := cmd.Run()
+func Pack(src, tarball string) {
+	fi, err := os.Stat(src)
 	if err != nil {
 		panic(err)
 	}
-}
-
-func Pack(src, tarball string) {
-	cmd := exec.Command("tar", "czf", tarball, "-C", src, ".")
-	err := cmd.Run()
+	var cmd *exec.Cmd
+	// determine whether packing a file or a directory
+	switch mode := fi.Mode(); {
+	case mode.IsDir():
+		cmd = exec.Command("tar", "czf", tarball, "-C", src, ".")
+	case mode.IsRegular():
+		cmd = exec.Command("tar", "czf", tarball, src)
+	}
+	err = cmd.Run()
 	if err != nil {
 		panic(err)
 	}
 }
 
 // func main() {
-// 	packTar(os.Args[1], os.Args[2])
+// 	Pack(os.Args[2], os.Args[1])
 // }
