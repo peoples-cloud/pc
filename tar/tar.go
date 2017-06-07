@@ -11,6 +11,14 @@ func Unpack(tarball, dest string) {
 	}
 }
 
+func PackFile(file, tarball string) {
+	cmd := exec.Command("tar", "czf", tarball, file)
+	err := cmd.Run()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func Pack(src, tarball string) {
 	cmd := exec.Command("tar", "czf", tarball, "-C", src, ".")
 	err := cmd.Run()
